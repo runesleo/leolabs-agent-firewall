@@ -1,6 +1,6 @@
 # TapeOut Genesis Transistor Hackathon — Agent Firewall v2 Submission Pack
 
-Status: **v2 product + browser acceptance complete. Public GitHub/X links must point to this v2 build before the official Google Form is submitted.**
+Status: **v2 product, public GitHub, public live demo and public-browser acceptance complete. New Agent Firewall v2 X announcement is the remaining public-link prerequisite before the official Google Form is submitted.**
 
 ## Positioning
 
@@ -26,6 +26,9 @@ LeoLabs Agent Firewall
 
 LeoLabs Agent Firewall v2 is a deterministic pre-sign transaction co-processor for AI treasuries on X Layer. Before a vault release can reach a signer, the exact transaction must pass a fail-closed firewall, native-OKB SpendGuard must remain inside its daily cap, and Quorum2of3 must reach two approvals. It returns RELEASE / HOLD / DENY and a tamper-evident receipt that re-verifies the full decision path. Transaction risk-score arithmetic uses a real TapeOut ADD8 circuit on the existing LeoLabs Processor (circuitId 1, 122 NAND); the browser independently reads its 854-byte netlist from X Layer via eth_call and SHA-256 matches it. Demo mode never connects a wallet, signs or broadcasts.
 
+Live demo: https://runesleo.github.io/leolabs-agent-firewall/
+Public source: https://github.com/runesleo/leolabs-agent-firewall
+
 Processor: `0xa196ab8ef5ae052c13819e73f3cc3f4263faf744`
 TapeOut tx: `0xf7fa9ee1e4f05226a211aad101cce2856af62d71b8f609a3c5b48f1ac3047068`
 Deploy wallet: `0x1e1a2f7ac1bc6df29a1878c3f26b17dccdc16e15`
@@ -45,9 +48,9 @@ Use the existing contact email already stored in the form session.
 
 ### GitHub Repository
 
-`PENDING_V2_PUBLIC_GITHUB_URL`
+https://github.com/runesleo/leolabs-agent-firewall
 
-Do not reuse the old Builder Desk PR unless it visibly contains this Agent Firewall v2 source, demo and acceptance evidence.
+Live demo: https://runesleo.github.io/leolabs-agent-firewall/
 
 ### X Post Link
 
@@ -71,7 +74,8 @@ The X post must introduce **Agent Firewall v2**, not the older Builder Desk laun
 - [x] Unlimited approval: **DENY / risk 200 / BLOCKED**
 - [x] Demo exposes no wallet-connect path
 - [x] Browser readback evidence: `browser-acceptance-v2.json`; full-page screenshot captured separately for announcement/demo media (SHA-256 `2d85d2908a004ee211f2f8f1f4ecf23237b15327c709cbdfdb84ee896f1d0333`)
-- [ ] Push curated v2 source/evidence to public GitHub
+- [x] Curated v2 source/evidence published to public GitHub
+- [x] Public GitHub Pages demo accepted in real Chrome (`public-pages-acceptance.json`, all checks pass)
 - [ ] Publish new Agent Firewall v2 X announcement
 - [ ] Put those two public URLs into the Google Form
 - [ ] Submit form and capture the final recorded-response receipt

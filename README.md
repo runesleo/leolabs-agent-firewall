@@ -1,12 +1,15 @@
 # LeoLabs Agent Firewall v2 — AI Treasury pre-sign co-processor on X Layer
 
+**Live demo:** https://runesleo.github.io/leolabs-agent-firewall/  
+**Public source:** https://github.com/runesleo/leolabs-agent-firewall
+
 Deterministic policy engine + CLI + browser inspector that sits **in front of the signer** of an AI treasury on X Layer (`eip155:196`). It never connects a wallet, never signs, never broadcasts.
 
 The v2 main path is an **AI Treasury / Vault Release**: a release reaches the signer only when the exact transaction passes the firewall, native-OKB **SpendGuard** remains inside its daily cap, and **Quorum2of3** reaches two approvals. The result is `RELEASE / HOLD / DENY` plus a vault-release receipt that re-verifies all three gates.
 
 The transaction firewall remains fail-closed: it inspects the exact transaction about to be signed and rejects unsafe or ambiguous chain / target / value / calldata / approval conditions. TapeOut's real ADD8 circuit is used only for transaction risk-score arithmetic; SpendGuard and quorum are deterministic local pre-sign controls, not claimed as on-chain circuits.
 
-Browser acceptance readback is published in [`browser-acceptance-v2.json`](./browser-acceptance-v2.json). A full-page screenshot was also captured for announcement/demo media (SHA-256 `2d85d2908a004ee211f2f8f1f4ecf23237b15327c709cbdfdb84ee896f1d0333`); repository hygiene intentionally excludes binary assets from this artifact path.
+Local browser acceptance readback is published in [`browser-acceptance-v2.json`](./browser-acceptance-v2.json); the deployed Pages build is independently verified in [`public-pages-acceptance.json`](./public-pages-acceptance.json) with all checks passing. A full-page screenshot was also captured for announcement/demo media (SHA-256 `2d85d2908a004ee211f2f8f1f4ecf23237b15327c709cbdfdb84ee896f1d0333`); repository hygiene intentionally excludes binary assets from this artifact path.
 
 Given a transaction intent it returns:
 
