@@ -1,0 +1,16 @@
+[
+  {
+    "label": "mint",
+    "rc": 0,
+    "action": "",
+    "ok": true,
+    "snippet": "{\"ok\": true, \"data\": {\"action\": \"\", \"riskItemDetail\": [], \"simulator\": {\"gasLimit\": null, \"gasUsed\": null, \"revertReason\": \"insufficient funds for gas * price + value: have 117802286640268 want 8712000000000000\"}, \"warnings\": null}}"
+  },
+  {
+    "label": "tapeout",
+    "rc": 0,
+    "action": "",
+    "ok": true,
+    "snippet": "{\"ok\": true, \"data\": {\"action\": \"\", \"riskItemDetail\": [], \"simulator\": {\"gasLimit\": null, \"gasUsed\": null, \"revertReason\": \"insufficient funds for gas * price + value: have 117802286640268 want 1300000000000000\"}, \"warnings\": null}}"
+  }
+]
