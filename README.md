@@ -1,7 +1,7 @@
 # LeoLabs Agent Firewall v2 — AI Treasury pre-sign co-processor on X Layer
 
-**Live demo:** https://runesleo.github.io/leolabs-agent-firewall/  
-**Public source:** https://github.com/runesleo/leolabs-agent-firewall
+- **Live demo:** https://runesleo.github.io/leolabs-agent-firewall/
+- **Public source:** https://github.com/runesleo/leolabs-agent-firewall
 
 Deterministic policy engine + CLI + browser inspector that sits **in front of the signer** of an AI treasury on X Layer (`eip155:196`). It never connects a wallet, never signs, never broadcasts.
 
