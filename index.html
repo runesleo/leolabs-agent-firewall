@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LeoLabs Agent Firewall — X Layer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080b0d;
+      --panel: #0f1417;
+      --line: #273239;
+      --muted: #85939b;
+      --text: #f4f7f8;
+      --lime: #b7ff38;
+      --green: #6cf5a2;
+      --amber: #ffcf66;
+      --red: #ff6b75;
+      --cyan: #66d9ff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(circle at 20% 0%, #132018 0, var(--bg) 34rem); color: var(--text); }
+    a { color: var(--cyan); text-decoration: none; }
+    button, input, textarea { font: inherit; }
+    code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 56px; }
+    header { display: flex; gap: 24px; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+    .eyebrow { color: var(--lime); text-transform: uppercase; letter-spacing: .16em; font-size: 12px; font-weight: 800; }
+    h1 { margin: 8px 0 8px; font-size: clamp(34px, 6vw, 64px); letter-spacing: -.055em; line-height: .95; }
+    .lede { max-width: 720px; color: #b6c1c6; font-size: 16px; line-height: 1.55; }
+    .safety { border: 1px solid #31543d; background: #102117; color: var(--green); padding: 9px 12px; border-radius: 999px; white-space: nowrap; font-size: 12px; font-weight: 750; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
+    .metric, .panel { border: 1px solid var(--line); background: linear-gradient(180deg, rgba(18,25,29,.96), rgba(12,17,20,.96)); border-radius: 16px; }
+    .metric { padding: 15px; }
+    .metric .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .11em; }
+    .metric .v { margin-top: 7px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 18px; font-weight: 800; overflow-wrap: anywhere; }
+    .metric .v.small { font-size: 13px; }
+    .grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 16px; }
+    .panel { padding: 18px; }
+    .panel h2 { margin: 0 0 4px; font-size: 18px; }
+    .panel p.hint { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .scenarios { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    button { border: 1px solid var(--line); background: #141c20; color: var(--text); border-radius: 10px; padding: 9px 11px; cursor: pointer; }
+    button:hover { border-color: #516069; }
+    button.primary { background: var(--lime); color: #0a0d0e; border-color: var(--lime); font-weight: 900; }
+    button.active { border-color: var(--lime); color: var(--lime); }
+    label { display: block; color: #aeb9be; font-size: 12px; margin: 12px 0 6px; }
+    input, textarea { width: 100%; border: 1px solid var(--line); background: #080d0f; color: var(--text); border-radius: 10px; padding: 10px 11px; outline: none; }
+    input:focus, textarea:focus { border-color: #65777f; }
+    textarea { min-height: 108px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .actions { display: flex; gap: 8px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+    .decision { display: flex; align-items: center; justify-content: space-between; gap: 14px; border: 1px solid var(--line); background: #090e10; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+    .decision-name { font-size: 34px; line-height: 1; font-weight: 950; letter-spacing: -.04em; }
+    .decision-name.ALLOW { color: var(--green); }
+    .decision-name.REVIEW { color: var(--amber); }
+    .decision-name.DENY { color: var(--red); }
+    .risk { text-align: right; }
+    .risk strong { display: block; font-size: 28px; }
+    .rules { display: grid; gap: 8px; }
+    .rule { display: grid; grid-template-columns: 16px 1fr auto; gap: 10px; align-items: start; border-bottom: 1px solid #1c252a; padding: 9px 0; }
+    .rule:last-child { border-bottom: 0; }
+    .dot { width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: var(--green); }
+    .rule.review .dot { background: var(--amber); }
+    .rule.fail .dot { background: var(--red); }
+    .rule .title { font-size: 13px; font-weight: 750; }
+    .rule .detail { color: var(--muted); font-size: 11px; margin-top: 2px; line-height: 1.4; overflow-wrap: anywhere; }
+    .weight { color: var(--muted); font-family: ui-monospace, monospace; font-size: 11px; }
+    .section { margin-top: 16px; }
+    .section-title { display: flex; justify-content: space-between; align-items: center; color: #d5dde0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #080d0f; border: 1px solid #1d272c; border-radius: 12px; padding: 12px; color: #b9c5ca; font-size: 11px; line-height: 1.5; max-height: 260px; overflow: auto; margin: 0; }
+    .hash { font: 11px ui-monospace, monospace; color: var(--lime); overflow-wrap: anywhere; }
+    .proof { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .proof-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+    .fact { background: #090e10; border: 1px solid #1d272c; border-radius: 12px; padding: 12px; }
+    .fact span { color: var(--muted); display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .09em; margin-bottom: 5px; }
+    .fact strong { font-family: ui-monospace, monospace; font-size: 12px; overflow-wrap: anywhere; }
+    .note { color: #a9b5ba; font-size: 12px; line-height: 1.55; border-left: 2px solid var(--lime); padding-left: 12px; margin-top: 12px; }
+    .badge { display: inline-block; border-radius: 999px; padding: 4px 9px; font-size: 11px; font-weight: 800; letter-spacing: .04em; border: 1px solid var(--line); color: var(--muted); }
+    .badge.MATCH { color: var(--green); border-color: #31543d; background: #102117; }
+    .badge.MISMATCH { color: var(--red); border-color: #5a2a2f; background: #1d0f11; }
+    .badge.UNVERIFIED, .badge.CHECKING { color: var(--amber); border-color: #5a4a22; background: #1d180c; }
+    .badge.PASS, .badge.VALID { color: var(--green); border-color: #31543d; background: #102117; }
+    .badge.FAIL, .badge.INVALID { color: var(--red); border-color: #5a2a2f; background: #1d0f11; }
+    .decision-name.ERROR { color: var(--red); }
+    .onchain-detail { color: var(--muted); font-size: 11px; margin-top: 8px; line-height: 1.5; overflow-wrap: anywhere; }
+    .footer { color: #66747b; margin-top: 20px; font-size: 11px; }
+    @media (max-width: 860px) {
+      header { display: block; }
+      .safety { display: inline-block; margin-top: 12px; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .grid, .proof { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <div class="eyebrow">LeoLabs · X Layer · TapeOut · Agent Firewall v2</div>
+        <h1>AI Treasury Firewall</h1>
+        <div class="lede">A deterministic <strong>pre-sign transaction co-processor</strong> for AI treasuries on X Layer. A vault release happens only when the exact transaction passes the firewall, the native-OKB <strong>SpendGuard</strong> stays inside its daily cap, and <strong>Quorum2of3</strong> reaches two approvals. The taped ADD8 circuit remains the verifiable risk-arithmetic primitive inside the transaction policy path.</div>
+      </div>
+      <div class="safety">LOCAL CO-PROCESSOR · NO WALLET · NO SIGNATURE · NO BROADCAST</div>
+    </header>
+
+    <section class="metrics">
+      <div class="metric"><div class="k">Network</div><div class="v">X Layer · 196</div></div>
+      <div class="metric"><div class="k">Release gates</div><div class="v small">Tx Firewall · SpendGuard · 2/3</div></div>
+      <div class="metric"><div class="k">TapeOut primitive</div><div class="v small">ADD8 · #1 · <span id="gateCount">122</span> NAND</div></div>
+      <div class="metric"><div class="k">On-chain netlist</div><div class="v small"><span id="onchainBadge" class="badge">NOT CHECKED</span></div></div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>AI Treasury / Vault Release</h2>
+        <p class="hint">Replay the main release path and three failure modes. Everything below is evaluated before a signer is called; this page never connects a wallet or broadcasts a transaction.</p>
+        <div class="scenarios" id="scenarioBar"></div>
+
+        <div class="two">
+          <div><label for="vaultId">Vault ID</label><input id="vaultId" value="leolabs-ai-treasury" spellcheck="false" /></div>
+          <div><label for="chainId">Chain ID</label><input id="chainId" inputmode="numeric" value="196" spellcheck="false" /></div>
+        </div>
+
+        <div class="two">
+          <div><label for="spentToday">SpendGuard · spent today (OKB)</label><input id="spentToday" inputmode="decimal" value="0.004" spellcheck="false" /></div>
+          <div><label for="dailyLimit">SpendGuard · daily cap (OKB)</label><input id="dailyLimit" inputmode="decimal" value="0.012" spellcheck="false" /></div>
+        </div>
+
+        <label for="approvals">Quorum approvals (comma-separated; fixed members: policy-agent, risk-agent, ops-agent)</label>
+        <input id="approvals" value="policy-agent,risk-agent" spellcheck="false" />
+
+        <div class="two">
+          <div><label for="maxValue">Transaction policy max value (OKB)</label><input id="maxValue" inputmode="decimal" value="0.02" spellcheck="false" /></div>
+          <div><label for="valueOkb">Requested native value (OKB)</label><input id="valueOkb" inputmode="decimal" value="0.005" spellcheck="false" /></div>
+        </div>
+        <label for="to">Transaction destination</label>
+        <input id="to" spellcheck="false" />
+        <label for="data">Transaction calldata</label>
+        <textarea id="data" spellcheck="false"></textarea>
+
+        <div class="actions">
+          <button class="primary" id="evaluate">Evaluate vault release</button>
+          <button id="verifyOnchain">Verify TapeOut netlist (read-only)</button>
+          <button id="verifyReceipt">Verify release receipt</button>
+          <button id="copyReceipt">Copy receipt</button>
+          <button id="downloadReceipt">Download JSON</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Co-processor decision</h2>
+        <p class="hint">RELEASE requires all three stages to clear. A transaction-policy DENY or SpendGuard breach vetoes release; transaction REVIEW or insufficient quorum becomes HOLD. SpendGuard currently covers native OKB only.</p>
+        <div class="decision">
+          <div>
+            <div class="decision-name" id="decision">—</div>
+            <div id="reasons" class="hint"></div>
+          </div>
+          <div class="risk"><span class="hint">transaction risk / 255</span><strong id="risk">0</strong></div>
+        </div>
+
+        <div class="proof-grid">
+          <div class="fact"><span>Transaction Firewall</span><strong id="transactionGate">—</strong></div>
+          <div class="fact"><span>SpendGuard</span><strong id="spendGate">—</strong></div>
+          <div class="fact"><span>Quorum2of3</span><strong id="quorumGate">—</strong></div>
+          <div class="fact"><span>Signer action</span><strong id="signerAction">BLOCKED UNTIL RELEASE</strong></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><span>Transaction policy rules</span><span></span></div>
+          <div class="rules" id="rules"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><span>ADD8 risk accumulator trace (NAND netlist)</span><span id="saturation"></span></div>
+          <pre id="trace"></pre>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><span>Vault-release commitment (tx + SpendGuard + quorum)</span><span id="receiptBadge" class="badge">NOT VERIFIED</span></div>
+          <div id="policyHash" class="hash">—</div>
+          <div class="onchain-detail" id="receiptChecks"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><span>Receipt preview</span></div>
+          <pre id="receipt"></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="proof">
+      <div class="panel">
+        <h2>Use it as a pre-sign co-processor</h2>
+        <p class="hint">Same dependency-free engine in browser and CLI. The release command returns exit code 0 = RELEASE, 2 = HOLD, 3 = DENY, 1 = malformed policy/control/receipt. Only exit 0 may be handed to a signer; this MVP itself never signs.</p>
+        <pre id="cliSnippet"></pre>
+        <div class="proof-grid">
+          <div class="fact"><span>Quorum</span><strong>Exactly 2 of 3</strong></div>
+          <div class="fact"><span>SpendGuard</span><strong>Projected native OKB ≤ daily cap</strong></div>
+          <div class="fact"><span>Tx Firewall</span><strong>Chain · target · value · calldata · approvals</strong></div>
+          <div class="fact"><span>Receipt</span><strong>Hash + deterministic re-evaluation</strong></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Real X Layer / TapeOut provenance</h2>
+        <p class="hint">The Processor and ADD8 circuit below already exist on X Layer mainnet. No new deployment, mint, tape-out, signature, or gas is required for this demo.</p>
+        <div class="fact"><span>Processor</span><strong id="processor"></strong></div>
+        <div class="proof-grid">
+          <div class="fact"><span>Circuit</span><strong>ADD8 · circuitId 1 · 122 NAND</strong></div>
+          <div class="fact"><span>Netlist sha256</span><strong id="netlistSha"></strong></div>
+          <div class="fact"><span>Circuit self-test</span><strong id="selftest"></strong></div>
+          <div class="fact"><span>Read-only check</span><strong><span id="onchainBadge2" class="badge">NOT CHECKED</span></strong></div>
+        </div>
+        <div class="onchain-detail" id="onchainDetail">Click “Verify TapeOut netlist” to eth_call <code>netlist(1)</code> on the existing Processor and compare SHA-256 with the embedded ADD8 bytes.</div>
+        <p>
+          <a href="https://tapeout.net/cn#/l2/0xa196ab8ef5ae052c13819e73f3cc3f4263faf744" target="_blank" rel="noreferrer">TapeOut canvas ↗</a>
+          &nbsp;·&nbsp;
+          <a href="https://www.oklink.com/xlayer/address/0xa196ab8ef5ae052c13819e73f3cc3f4263faf744" target="_blank" rel="noreferrer">OKLink ↗</a>
+          &nbsp;·&nbsp;
+          <a href="https://www.oklink.com/xlayer/tx/0xf7fa9ee1e4f05226a211aad101cce2856af62d71b8f609a3c5b48f1ac3047068" target="_blank" rel="noreferrer">Tapeout tx ↗</a>
+        </p>
+        <div class="note"><strong>Scope honesty:</strong> Processor circuitId 1 is an 8-bit adder. The transaction-policy rules, SpendGuard, and Quorum2of3 are deterministic local pre-sign logic. Only transaction risk-score addition is evaluated through the taped ADD8 netlist (bit-for-bit local simulation, arithmetic cross-check, and optional read-only chain hash verification). There is no claim that the quorum or vault policy is already deployed as an on-chain circuit.</div>
+      </div>
+    </section>
+
+    <div class="footer">LeoLabs Agent Firewall v2 · AI Treasury / Vault Release · X Layer · no wallet / no signature / no broadcast</div>
+  </main>
+
+  <script type="module">
+    import {
+      ADD8,
+      PROCESSOR,
+      RELEASE_SCENARIOS,
+      buildVaultReleaseReceipt,
+      evaluateVaultRelease,
+      formatOkb,
+      runGoldenVectors,
+      verifyOnchainNetlist,
+      verifyVaultReleaseReceipt,
+    } from "./agent-policy-engine.mjs";
+
+    const el = (id) => document.getElementById(id);
+    const QUORUM_MEMBERS = ["policy-agent", "risk-agent", "ops-agent"];
+    let lastReceipt = null;
+    let lastOnchain = null;
+    let activeScenarioLabel = "AI Treasury release";
+
+    el("processor").textContent = PROCESSOR;
+    el("netlistSha").textContent = ADD8.netlistSha256;
+    el("gateCount").textContent = String(ADD8.nNand);
+    el("cliSnippet").textContent = [
+      "# primary demo: safe AI Treasury release (exit 0 = RELEASE)",
+      "node agent-firewall-cli.mjs release --scenario treasuryRelease --receipt vault-release.json",
+      "",
+      "# negative paths: quorum HOLD and SpendGuard DENY",
+      "node agent-firewall-cli.mjs release --scenario quorumHold",
+      "node agent-firewall-cli.mjs release --scenario spendGuardDeny",
+      "",
+      "# verify the exact release receipt offline",
+      "node agent-firewall-cli.mjs verify-release --receipt vault-release.json",
+      "",
+      "# prove the ADD8 bytes match X Layer (eth_call only)",
+      "node agent-firewall-cli.mjs verify-onchain",
+    ].join("\n");
+
+    const golden = runGoldenVectors();
+    const goldenOk = golden.filter((v) => v.ok).length;
+    const selftest = el("selftest");
+    selftest.textContent = goldenOk + "/" + golden.length + " vectors ";
+    const selftestBadge = document.createElement("span");
+    selftestBadge.className = "badge " + (goldenOk === golden.length ? "PASS" : "FAIL");
+    selftestBadge.textContent = goldenOk === golden.length ? "PASS" : "FAIL";
+    selftest.appendChild(selftestBadge);
+
+    const bar = el("scenarioBar");
+    for (const [key, scenario] of Object.entries(RELEASE_SCENARIOS)) {
+      const button = document.createElement("button");
+      button.dataset.scenario = key;
+      button.textContent = scenario.label;
+      button.addEventListener("click", () => fillScenario(key));
+      bar.appendChild(button);
+    }
+
+    function fillScenario(key) {
+      const s = RELEASE_SCENARIOS[key];
+      activeScenarioLabel = s.label;
+      el("vaultId").value = s.controls.vaultId;
+      el("chainId").value = String(s.intent.chainId);
+      el("spentToday").value = String(s.controls.spendGuard.spentTodayOkb);
+      el("dailyLimit").value = String(s.controls.spendGuard.dailyLimitOkb);
+      el("approvals").value = s.controls.quorum.members.filter((m) => m.approved).map((m) => m.id).join(",");
+      el("to").value = s.intent.to;
+      el("valueOkb").value = s.intent.valueWei !== undefined ? formatOkb(BigInt(s.intent.valueWei)) : String(s.intent.valueOkb || "0");
+      el("data").value = s.intent.data;
+      for (const b of bar.querySelectorAll("button")) b.classList.toggle("active", b.dataset.scenario === key);
+      evaluate();
+    }
+
+    function renderRules(rules) {
+      const host = el("rules");
+      host.textContent = "";
+      for (const r of rules) {
+        const row = document.createElement("div");
+        row.className = "rule " + r.status;
+        const dot = document.createElement("div");
+        dot.className = "dot";
+        const body = document.createElement("div");
+        const title = document.createElement("div");
+        title.className = "title";
+        title.textContent = r.title;
+        const detail = document.createElement("div");
+        detail.className = "detail";
+        detail.textContent = r.code + " · " + r.detail;
+        body.append(title, detail);
+        const weight = document.createElement("div");
+        weight.className = "weight";
+        weight.textContent = r.weight ? "+" + r.weight : "PASS";
+        row.append(dot, body, weight);
+        host.appendChild(row);
+      }
+    }
+
+    function setOnchainBadge(status, detail) {
+      for (const id of ["onchainBadge", "onchainBadge2"]) {
+        const badge = el(id);
+        badge.className = "badge " + status;
+        badge.textContent = status.replace("_", " ");
+      }
+      if (detail) el("onchainDetail").textContent = detail;
+    }
+
+    function setReceiptBadge(status, detail) {
+      const badge = el("receiptBadge");
+      badge.className = "badge " + status;
+      badge.textContent = status.replace("_", " ");
+      el("receiptChecks").textContent = detail || "";
+    }
+
+    function clearResult(error) {
+      lastReceipt = null;
+      el("decision").textContent = "ERROR";
+      el("decision").className = "decision-name ERROR";
+      el("risk").textContent = "—";
+      el("reasons").textContent = "Release package rejected, nothing can reach a signer: " + error;
+      el("transactionGate").textContent = "ERROR";
+      el("spendGate").textContent = "ERROR";
+      el("quorumGate").textContent = "ERROR";
+      el("signerAction").textContent = "BLOCKED";
+      el("rules").textContent = "";
+      el("trace").textContent = "";
+      el("saturation").textContent = "";
+      el("policyHash").textContent = "—";
+      el("receipt").textContent = "";
+      setReceiptBadge("NOT_VERIFIED", "");
+    }
+
+    async function evaluate() {
+      try {
+        const approved = new Set(el("approvals").value.split(",").map((v) => v.trim()).filter(Boolean));
+        for (const id of approved) {
+          if (!QUORUM_MEMBERS.includes(id)) throw new Error("unknown Quorum2of3 member: " + id);
+        }
+        const result = evaluateVaultRelease(
+          {
+            label: "Browser demo · " + activeScenarioLabel,
+            intent: {
+              chainId: el("chainId").value.trim(),
+              to: el("to").value.trim(),
+              valueOkb: el("valueOkb").value.trim() || "0",
+              data: el("data").value.trim() || "0x",
+            },
+            controls: {
+              vaultId: el("vaultId").value.trim(),
+              spendGuard: {
+                spentTodayOkb: el("spentToday").value.trim(),
+                dailyLimitOkb: el("dailyLimit").value.trim(),
+              },
+              quorum: {
+                threshold: 2,
+                members: QUORUM_MEMBERS.map((id) => ({ id, approved: approved.has(id) })),
+              },
+            },
+          },
+          { maxValueOkb: el("maxValue").value.trim() },
+        );
+
+        lastReceipt = await buildVaultReleaseReceipt(result, lastOnchain ? { onchain: lastOnchain } : {});
+        const tx = result.transaction;
+        const spend = result.gates.spendGuard;
+        const quorum = result.gates.quorum;
+
+        el("decision").textContent = result.decision;
+        el("decision").className = "decision-name " + (result.decision === "RELEASE" ? "ALLOW" : result.decision === "HOLD" ? "REVIEW" : "DENY");
+        el("risk").textContent = String(tx.riskScore);
+        el("reasons").textContent = result.reasonCodes.length ? result.reasonCodes.join(" · ") : "All release gates pass";
+        el("transactionGate").textContent = result.gates.transaction.status + " · " + tx.decision + " · risk " + tx.riskScore;
+        el("spendGate").textContent = spend.status + " · " + spend.spentTodayOkb + " + " + spend.requestOkb + " = " + spend.projectedOkb + " / " + spend.dailyLimitOkb + " OKB";
+        el("quorumGate").textContent = quorum.status + " · " + quorum.approvals + "/" + quorum.total + " approved";
+        el("signerAction").textContent = result.decision === "RELEASE" ? "ELIGIBLE FOR SIGNER" : "BLOCKED";
+        el("saturation").textContent = tx.accumulator.saturated ? "SATURATED (carry-out)" : "NO CARRY";
+        el("trace").textContent = tx.accumulator.steps.length
+          ? tx.accumulator.steps.map((s, i) =>
+              "#" + (i + 1) + "  " + s.before + " + " + s.add + " → netlist packed=" + s.add8Packed + " carry=" + s.carry + " score=" + s.after + "   (" + ADD8.nNand + " NAND evaluated)"
+            ).join("\n")
+          : "No transaction-policy risk weights to accumulate — score stays 0.";
+        renderRules(tx.rules);
+        el("policyHash").textContent = lastReceipt.commitmentHash;
+        el("receipt").textContent = JSON.stringify(lastReceipt, null, 2);
+        setReceiptBadge("NOT_VERIFIED", "Click “Verify release receipt” to recompute the hash and re-evaluate transaction policy, SpendGuard, and Quorum2of3.");
+      } catch (error) {
+        clearResult(String(error && error.message ? error.message : error));
+      }
+    }
+
+    el("evaluate").addEventListener("click", evaluate);
+
+    el("verifyReceipt").addEventListener("click", async () => {
+      if (!lastReceipt) await evaluate();
+      if (!lastReceipt) return;
+      const report = await verifyVaultReleaseReceipt(JSON.parse(JSON.stringify(lastReceipt)));
+      setReceiptBadge(report.valid ? "VALID" : "INVALID", report.checks.map((c) => (c.ok ? "ok " : "FAIL ") + c.name + ": " + c.detail).join(" · "));
+    });
+
+    el("verifyOnchain").addEventListener("click", async () => {
+      const button = el("verifyOnchain");
+      button.disabled = true;
+      setOnchainBadge("CHECKING", "Calling netlist(1) on the existing Processor via public X Layer RPC…");
+      try {
+        lastOnchain = await verifyOnchainNetlist();
+      } catch (error) {
+        lastOnchain = { status: "UNVERIFIED", errors: [{ error: String(error && error.message ? error.message : error) }] };
+      }
+      button.disabled = false;
+      if (lastOnchain.status === "MATCH") {
+        setOnchainBadge("MATCH", "netlist(1) via " + lastOnchain.rpc + ": " + lastOnchain.bytes + " bytes, sha256 " + lastOnchain.sha256 + " — identical to the embedded ADD8 netlist.");
+      } else if (lastOnchain.status === "MISMATCH") {
+        setOnchainBadge("MISMATCH", "On-chain SHA-256 " + lastOnchain.sha256 + " does not match embedded " + lastOnchain.expectedSha256 + ". Do not trust this build.");
+      } else {
+        const why = (lastOnchain.errors || []).map((e) => (e.rpc || "rpc") + ": " + e.error).join(" · ");
+        setOnchainBadge("UNVERIFIED", "Could not read the chain from this browser (" + (why || "no RPC reachable") + "). CLI verification remains available.");
+      }
+      await evaluate();
+    });
+
+    el("copyReceipt").addEventListener("click", async () => {
+      if (!lastReceipt) await evaluate();
+      if (!lastReceipt) return;
+      await navigator.clipboard.writeText(JSON.stringify(lastReceipt, null, 2));
+      el("copyReceipt").textContent = "Copied";
+      setTimeout(() => { el("copyReceipt").textContent = "Copy receipt"; }, 900);
+    });
+
+    el("downloadReceipt").addEventListener("click", async () => {
+      if (!lastReceipt) await evaluate();
+      if (!lastReceipt) return;
+      const blob = new Blob([JSON.stringify(lastReceipt, null, 2) + "\n"], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "agent-firewall-vault-release.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    fillScenario("treasuryRelease");
+  </script>
+</body>
+</html>
